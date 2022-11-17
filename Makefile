@@ -7,16 +7,14 @@ createdb:
 dropdb:
 	docker exec -it projecthub-db dropdb project_hub
 
-migrateup:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/project_hub?sslmode=disable" -verbose up
 
-migratedown:
-	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/project_hub?sslmode=disable" -verbose down
+# migrateup:
+# 	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/project_hub?sslmode=disable" -verbose up
 
-sqlc:
-	sqlc generate
+# migratedown:
+# 	migrate -path db/migration -database "postgresql://root:secret@localhost:5432/project_hub?sslmode=disable" -verbose down
 
 server:
 	go run main.go
 
-.PHONY: prostgres createdb dropdb migrateup migratedown sqlc server
+.PHONY: prostgres createdb dropdb server

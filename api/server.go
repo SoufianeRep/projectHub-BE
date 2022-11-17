@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type Server struct {
@@ -12,11 +13,14 @@ type Server struct {
 var Router *gin.Engine = gin.Default()
 
 // NewServer creates and returns an instance of a server
-func NewServer() *Server {
+func NewServer(db *gorm.DB) *Server {
 	server := &Server{router: Router}
 	Router.MaxMultipartMemory = 8 << 20
 
 	Router.POST("/upload", handleUpload)
+	Router.POST("/users/new", handleCreateUser)
+	Router.POST("/teams", handleCreateTeam)
+	Router.POST("/login", handleLogin)
 
 	return server
 }
@@ -25,3 +29,7 @@ func NewServer() *Server {
 func (server *Server) Start(serverAdr string) error {
 	return server.router.Run(serverAdr)
 }
+
+// func errorResponse(err error) gin.H {
+// 	return gin.H{"message": err.Error()}
+// }

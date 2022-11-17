@@ -23,7 +23,7 @@ func TranscribeTest() (trsOutput *transcribeservice.StartTranscriptionJobOutput,
 
 	if err != nil {
 		fmt.Println(err)
-		return trsOutput, err
+		return
 	}
 
 	return trsOutput, nil
