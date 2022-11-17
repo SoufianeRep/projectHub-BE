@@ -23,24 +23,26 @@ type CreateUserParams struct {
 	LastSignin time.Time
 }
 
-func CreateUser(arg CreateUserParams) error {
-	result := DB.Create(&User{
+func CreateUser(arg CreateUserParams) (User, error) {
+	user := User{
 		Email:      arg.Email,
 		Password:   arg.Password,
 		LastSignin: time.Now(),
-	})
+	}
+
+	result := DB.Create(&user)
 	if result.Error != nil {
 		pgError := result.Error.(*pgconn.PgError)
 		if errors.Is(result.Error, pgError) {
 			switch pgError.Code {
 			case "23505":
-				return fmt.Errorf("duplicate, email already exist")
+				return User{}, fmt.Errorf("duplicate, email already exist")
 			}
 		}
-		return fmt.Errorf("an error has occured whie creating the user")
+		return User{}, fmt.Errorf("an error has occured whie creating the user")
 	}
 
-	return nil
+	return user, nil
 }
 
 func GetUserByEmail(email string) (User, error) {
@@ -51,4 +53,16 @@ func GetUserByEmail(email string) (User, error) {
 	}
 
 	return user, nil
+}
+
+type UpdateUserParams struct {
+	Email      string
+	Password   string
+	LastSignin time.Time
+}
+
+// UpdateLastSign takes a user row instance as a receiver and updates the
+// last_signin column to time.Now()
+func (user User) UpdateLastSignin() {
+	DB.Model(&user).Update("last_signin", time.Now())
 }

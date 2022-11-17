@@ -16,6 +16,11 @@ type createUserRequest struct {
 	Password string `json:"password" binding:"required,min=8"`
 }
 
+type createUserResponse struct {
+	Email      string `json:"email"`
+	LastSignin time.Time
+}
+
 func handleCreateUser(ctx *gin.Context) {
 	var req createUserRequest
 
@@ -37,29 +42,24 @@ func handleCreateUser(ctx *gin.Context) {
 	}
 
 	arg := db.CreateUserParams{
-		Email:      req.Email,
-		Password:   hashedPassword,
-		LastSignin: time.Now(),
+		Email:    req.Email,
+		Password: hashedPassword,
 	}
 
-	err = db.CreateUser(arg)
+	user, err := db.CreateUser(arg)
 	if err != nil {
-		fmt.Println("creating error", err)
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"error": err.Error(),
 		})
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"message": "User created successfully",
-	})
-}
+	res := createUserResponse{
+		Email:      user.Email,
+		LastSignin: user.LastSignin,
+	}
 
-type createUserWithTeamRequest struct {
-	Email    string `json:"email" binding:"required"`
-	Password string `json:"password" binding:"required"`
-	TeamName string `json:"teamName" binding:"required"`
+	ctx.JSON(http.StatusOK, res)
 }
 
 type userLoginParams struct {
@@ -85,7 +85,7 @@ func handleLogin(ctx *gin.Context) {
 			return
 		default:
 			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Something went wring.",
+				"error": "Something went wrong.",
 			})
 			return
 		}
@@ -98,6 +98,7 @@ func handleLogin(ctx *gin.Context) {
 		return
 	}
 
+	user.UpdateLastSignin()
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "User authenticated",
 	})
