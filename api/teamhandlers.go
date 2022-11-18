@@ -1,7 +1,9 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/SoufianeRep/tscit/db"
 	"github.com/gin-gonic/gin"
@@ -39,8 +41,19 @@ func handleCreateTeam(ctx *gin.Context) {
 	})
 }
 
-type createUserWithTeamParams struct {
-	Email    string `json:"email" binding:"required"`
-	Password string `json:"password" binding:"required"`
-	TeamName string `jason:"teamName" binding:"required"`
+type addMemberToTeamRequest struct {
+	TeamID uint
+	Email  string `json:"email" binding:"required,email"`
+	Role   string `json:"role" binding:"required"`
+}
+
+func handleAddMemberToTeam(ctx *gin.Context) {
+	var req addMemberToTeamRequest
+	teamID, err := strconv.Atoi(ctx.Param("id"))
+	if err != nil {
+		fmt.Println("cant convert param to int")
+	}
+	req.TeamID = uint(teamID)
+
+	// TODO: continue witht he logic
 }

@@ -18,8 +18,11 @@ func NewServer(db *gorm.DB) *Server {
 	Router.MaxMultipartMemory = 8 << 20
 
 	Router.POST("/upload", handleUpload)
-	Router.POST("/users/new", handleCreateUser)
+
+	Router.POST("/users/create", handleCreateUser)
+
 	Router.POST("/teams", handleCreateTeam)
+	Router.POST("/teams/:id/members", handleAddMemberToTeam)
 	Router.POST("/login", handleLogin)
 
 	return server
