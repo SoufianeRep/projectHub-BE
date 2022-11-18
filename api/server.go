@@ -1,31 +1,52 @@
 package api
 
 import (
+	"fmt"
+	"os"
+
+	"github.com/SoufianeRep/tscit/token"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
+// Server serves HTTP requests for the app
 type Server struct {
-	router *gin.Engine
+	router     *gin.Engine
+	tokenMaker token.Maker
+	db         *gorm.DB
 }
 
-// Global variable to be used elswhere
-var Router *gin.Engine = gin.Default()
-
 // NewServer creates and returns an instance of a server
-func NewServer(db *gorm.DB) *Server {
-	server := &Server{router: Router}
-	Router.MaxMultipartMemory = 8 << 20
+func NewServer(db *gorm.DB) (*Server, error) {
+	tokenMaker, err := token.NewPasetoMaker(os.Getenv("TOKEN_SYMMETRIC_KEY"))
+	if err != nil {
+		return nil, fmt.Errorf("cant create a token: %v", err)
+	}
 
-	Router.POST("/upload", handleUpload)
+	server := &Server{
+		tokenMaker: tokenMaker,
+		db:         db,
+	}
 
-	Router.POST("/users/create", handleCreateUser)
+	server.setupRouter()
 
-	Router.POST("/teams", handleCreateTeam)
-	Router.POST("/teams/:id/members", handleAddMemberToTeam)
-	Router.POST("/login", handleLogin)
+	return server, nil
+}
 
-	return server
+func (server *Server) setupRouter() {
+	router := gin.Default()
+
+	router.MaxMultipartMemory = 8 << 20
+
+	router.POST("/upload", handleUpload)
+
+	router.POST("/users", server.handleCreateUser)
+	router.POST("/users/login", server.handleLogin)
+
+	router.POST("/teams", handleCreateTeam)
+	router.POST("/teams/:id/members", handleAddMemberToTeam)
+
+	server.router = router
 }
 
 // Start runs a gin default server on the given address

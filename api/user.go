@@ -16,12 +16,19 @@ type createUserRequest struct {
 	Password string `json:"password" binding:"required,min=8"`
 }
 
-type createUserResponse struct {
+type userResponse struct {
 	Email      string `json:"email"`
 	LastSignin time.Time
 }
 
-func handleCreateUser(ctx *gin.Context) {
+func newUserResponse(user db.User) userResponse {
+	return userResponse{
+		Email:      user.Email,
+		LastSignin: user.LastSignin,
+	}
+}
+
+func (server *Server) handleCreateUser(ctx *gin.Context) {
 	var req createUserRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -54,21 +61,22 @@ func handleCreateUser(ctx *gin.Context) {
 		return
 	}
 
-	res := createUserResponse{
-		Email:      user.Email,
-		LastSignin: user.LastSignin,
-	}
-
+	res := newUserResponse(user)
 	ctx.JSON(http.StatusOK, res)
 }
 
-type userLoginParams struct {
+type loginUserRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
 }
 
-func handleLogin(ctx *gin.Context) {
-	var req userLoginParams
+type loginUserResponse struct {
+	User        userResponse `json:"user"`
+	AccessToken string       `json:"access_token"`
+}
+
+func (server *Server) handleLogin(ctx *gin.Context) {
+	var req loginUserRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{
@@ -92,14 +100,25 @@ func handleLogin(ctx *gin.Context) {
 	}
 
 	if err := util.CheckPassword(user.Password, req.Password); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{
+		ctx.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Invalid credentials.",
 		})
 		return
 	}
 
-	user.UpdateLastSignin()
-	ctx.JSON(http.StatusOK, gin.H{
-		"message": "User authenticated",
-	})
+	accessToken, err := server.tokenMaker.CreateToken(
+		user.Email,
+		time.Minute*15,
+	)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
+	}
+
+	res := loginUserResponse{
+		User:        newUserResponse(user),
+		AccessToken: accessToken,
+	}
+
+	// res := loginUserResponse{}
+	ctx.JSON(http.StatusOK, res)
 }

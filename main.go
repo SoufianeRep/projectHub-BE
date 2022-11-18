@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 
@@ -20,16 +19,20 @@ func main() {
 	// Load AWS bucket config and initialize S3 bucket
 	cfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
-		fmt.Println("Load config error", err)
+		log.Fatal("cannot load config:", err)
 	}
 
 	// Get a db instance
 	db := db.GetDB()
 
-	server := api.NewServer(db)
+	server, err := api.NewServer(db)
+	if err != nil {
+		log.Fatal("cannot create a new server:", err)
+	}
+
 	err = server.Start(os.Getenv("SERVER_ADDRESS"))
 	if err != nil {
-		log.Fatal("Cannot Start the server:", err)
+		log.Fatal("Cannot start the server:", err)
 	}
 
 	// initializes a new s3 client
