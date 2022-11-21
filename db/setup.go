@@ -39,11 +39,20 @@ func init() {
 
 	fmt.Println("Successfully conncected to the database")
 
+	fmt.Println("Running migration")
 	err = DB.AutoMigrate(&User{}, &Project{}, &Team{}, &Role{})
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Println("Migration successfull")
+
+	fmt.Println("Running Seeds")
+	err = RunSeed(DB)
+	if err != nil {
+		fmt.Println("Seed Error:", err)
+	} else {
+		fmt.Println("Seeding successfull")
+	}
 
 	// TODO: More config for the DB
 }

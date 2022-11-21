@@ -14,15 +14,18 @@ import (
 type createUserRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=8"`
+	TeamName string `json:"team_name"`
 }
 
 type userResponse struct {
+	ID         uint   `json:"id"`
 	Email      string `json:"email"`
 	LastSignin time.Time
 }
 
 func newUserResponse(user db.User) userResponse {
 	return userResponse{
+		ID:         user.ID,
 		Email:      user.Email,
 		LastSignin: user.LastSignin,
 	}
@@ -41,9 +44,9 @@ func (server *Server) handleCreateUser(ctx *gin.Context) {
 
 	hashedPassword, err := util.HashPassword(req.Password)
 	if err != nil {
-		// TODO: Handle properly dev pusposes only!!!
+		// TODO: Handle properly dev purposes only!!!
 		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": "an Error has occured while hashing the passwor",
+			"error": "an Error has occured while hashing the password",
 		})
 		return
 	}
@@ -107,8 +110,9 @@ func (server *Server) handleLogin(ctx *gin.Context) {
 	}
 
 	accessToken, err := server.tokenMaker.CreateToken(
+		user.ID,
 		user.Email,
-		time.Minute*15,
+		time.Minute*15, // TODO: change the validity of the token to a env variable for global use
 	)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)

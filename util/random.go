@@ -6,7 +6,11 @@ import (
 	"time"
 )
 
-const alphabet = "abcdefghijklmnopqrstuvwxyz"
+const (
+	alphabet = "abcdefghijklmnopqrstuvwxyz"
+)
+
+var roles = []string{"manager", "superuser", "linguist"}
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -31,4 +35,8 @@ func RandomString(n int) string {
 // RandomInt generates a random email
 func RandomEmail() string {
 	return RandomString(6) + "." + RandomString(8) + "@gmail.com"
+}
+
+func RandomRole() string {
+	return roles[rand.Intn(len(roles)-1)]
 }

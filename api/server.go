@@ -38,13 +38,20 @@ func (server *Server) setupRouter() {
 
 	router.MaxMultipartMemory = 8 << 20
 
-	router.POST("/upload", handleUpload)
-
-	router.POST("/users", server.handleCreateUser)
+	router.POST("/users/signup", server.handleCreateUser)
 	router.POST("/users/login", server.handleLogin)
 
-	router.POST("/teams", handleCreateTeam)
-	router.POST("/teams/:id/members", handleAddMemberToTeam)
+	authRoutes := router.Group("/").Use(authMidldeware(server.tokenMaker))
+
+	authRoutes.GET("/users/:id")                                 // Get the user information
+	authRoutes.GET("/users/:id/teams")                           // Get all the the teams the user is part of
+	authRoutes.POST("/teams", handleCreateTeam)                  // Create a new team
+	authRoutes.POST("/teams/:id/members", handleAddMemberToTeam) // Add a new member to a team manually
+	authRoutes.GET("/teams/:id")                                 // Get team information with all team members and projects optionally
+	authRoutes.GET("teams/:id/members")
+	authRoutes.POST("/projects")
+	authRoutes.GET("/projects")
+	authRoutes.POST("/upload", handleUpload)
 
 	server.router = router
 }
