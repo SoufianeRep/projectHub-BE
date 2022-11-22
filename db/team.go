@@ -13,13 +13,13 @@ type CreateTeamParams struct {
 }
 
 // CreatTeam creates a team with the gven argument name and return it or an error
-func CreateTeam(arg CreateTeamParams) (*Team, error) {
-	team := &Team{
+func CreateTeam(arg CreateTeamParams) (Team, error) {
+	team := Team{
 		TeamName: arg.TeamName,
 	}
 	result := DB.Create(&team)
 	if result.Error != nil {
-		return nil, result.Error
+		return Team{}, result.Error
 	}
 	return team, nil
 }

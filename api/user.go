@@ -14,7 +14,7 @@ import (
 type createUserRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=8"`
-	TeamName string `json:"team_name"`
+	TeamName string `json:"team_name" binding:"omitempty,min=2"`
 }
 
 type userResponse struct {
@@ -46,7 +46,7 @@ func (server *Server) handleCreateUser(ctx *gin.Context) {
 	if err != nil {
 		// TODO: Handle properly dev purposes only!!!
 		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": "an Error has occured while hashing the password",
+			"error": "an error has occured while hashing the password",
 		})
 		return
 	}
@@ -63,9 +63,42 @@ func (server *Server) handleCreateUser(ctx *gin.Context) {
 		})
 		return
 	}
+	team := db.Team{}
+	if req.TeamName != "" {
+		tArg := db.CreateTeamParams{
+			TeamName: req.TeamName,
+		}
+
+		team, err := db.CreateTeam(tArg)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		rArg := db.CreateRoleParams{
+			UserID: user.ID,
+			TeamID: team.ID,
+			Role:   "manager",
+		}
+
+		err = db.CreateRole(rArg)
+		if err != nil {
+			if err != nil {
+				ctx.JSON(http.StatusInternalServerError, gin.H{
+					"error": err.Error(),
+				})
+				return
+			}
+		}
+	}
 
 	res := newUserResponse(user)
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusOK, gin.H{
+		"user": res,
+		"team": team,
+	})
 }
 
 type loginUserRequest struct {
@@ -92,7 +125,7 @@ func (server *Server) handleLogin(ctx *gin.Context) {
 	if err != nil {
 		switch err {
 		case gorm.ErrRecordNotFound:
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "Invalid credentials."})
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "no such user exists"})
 			return
 		default:
 			ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -125,4 +158,36 @@ func (server *Server) handleLogin(ctx *gin.Context) {
 
 	// res := loginUserResponse{}
 	ctx.JSON(http.StatusOK, res)
+}
+
+type getUserRequest struct {
+	ID uint `uri:"id" binding:"required,min=1"`
+}
+
+func handleGetUser(ctx *gin.Context) {
+	var req getUserRequest
+	if err := ctx.ShouldBindUri(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid user ID",
+		})
+		return
+	}
+
+	user, err := db.GetUSerByID(req.ID)
+	if err != nil {
+		switch err {
+		case gorm.ErrRecordNotFound:
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "no such user exists"})
+			return
+		default:
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Something went wrong.",
+			})
+			return
+		}
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"user": user,
+	})
 }

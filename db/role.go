@@ -17,7 +17,7 @@ type CreateRoleParams struct {
 	Role   string `json:"role"`
 }
 
-func CreateRole(arg *CreateRoleParams) error {
+func CreateRole(arg CreateRoleParams) error {
 	role := &Role{
 		UserID: arg.UserID,
 		TeamID: arg.TeamID,

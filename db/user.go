@@ -55,6 +55,17 @@ func GetUserByEmail(email string) (User, error) {
 	return user, nil
 }
 
+func GetUSerByID(id uint) (User, error) {
+	user := User{}
+
+	result := DB.Where("id = ?", id).First(&user)
+	if result.Error != nil {
+		return User{}, result.Error
+	}
+
+	return user, nil
+}
+
 type UpdateUserParams struct {
 	Email      string
 	Password   string

@@ -43,7 +43,7 @@ func (server *Server) setupRouter() {
 
 	authRoutes := router.Group("/").Use(authMidldeware(server.tokenMaker))
 
-	authRoutes.GET("/users/:id")                                 // Get the user information
+	authRoutes.GET("/users/:id", handleGetUser)                  // Get the user information
 	authRoutes.GET("/users/:id/teams")                           // Get all the the teams the user is part of
 	authRoutes.POST("/teams", handleCreateTeam)                  // Create a new team
 	authRoutes.POST("/teams/:id/members", handleAddMemberToTeam) // Add a new member to a team manually

@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"time"
 
@@ -10,40 +11,58 @@ import (
 )
 
 // RunSeed seeds the provided db with basic seeds for dev purposes
-func RunSeed(db *gorm.DB) error {
-	users, err := seedUsers(db)
-	if err != nil {
-		return err
-	}
-	teams, err := seedTeams(db)
-	if err != nil {
-		return err
-	}
-	err = seedRoles(db, users, teams)
-	if err != nil {
-		return err
+func RunSeed(db *gorm.DB) (err error) {
+	var users []User
+	var user User
+
+	if err = db.First(&user).Error; err == gorm.ErrRecordNotFound {
+		users, err = seedUsers(db)
+		if err != nil {
+			return
+		}
 	}
 
-	_, err = seedProjects(db, teams)
-	if err != nil {
-		return err
+	var teams []Team
+	var team Team
+
+	if err = db.First(&team).Error; err == gorm.ErrRecordNotFound {
+		teams, err = seedTeams(db)
+		if err != nil {
+			return
+		}
+
+		err = seedRoles(db, users, teams)
+		if err != nil {
+			return
+		}
+
+		_, err = seedProjects(db, teams)
+		if err != nil {
+			return
+		}
 	}
-	return nil
+
+	return
 }
 
 func seedUsers(db *gorm.DB) (users []User, err error) {
 	n := 10
 
 	for i := 0; i < n; i++ {
+		hp, err := util.HashPassword("password")
+		if err != nil {
+			log.Fatal("unable to has the password", err)
+		}
+
 		user := User{
 			Email:      util.RandomEmail(),
-			Password:   "password",
+			Password:   hp,
 			LastSignin: time.Now(),
 		}
 
 		result := db.Create(&user)
 		if result.Error != nil {
-			err = fmt.Errorf("problem has occured while seeding users:", result.Error)
+			err = fmt.Errorf("problem has occured while seeding users: %v", result.Error)
 		}
 
 		users = append(users, user)
