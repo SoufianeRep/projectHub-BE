@@ -38,5 +38,5 @@ func RandomEmail() string {
 }
 
 func RandomRole() string {
-	return roles[rand.Intn(len(roles)-1)]
+	return roles[rand.Intn(len(roles))]
 }

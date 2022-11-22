@@ -145,7 +145,7 @@ func (server *Server) handleLogin(ctx *gin.Context) {
 	accessToken, err := server.tokenMaker.CreateToken(
 		user.ID,
 		user.Email,
-		time.Minute*15, // TODO: change the validity of the token to a env variable for global use
+		time.Hour*2, // TODO: change the validity of the token to a env variable for global use
 	)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
@@ -173,7 +173,7 @@ func handleGetUser(ctx *gin.Context) {
 		return
 	}
 
-	user, err := db.GetUSerByID(req.ID)
+	user, err := db.GetUserByID(req.ID)
 	if err != nil {
 		switch err {
 		case gorm.ErrRecordNotFound:
@@ -186,8 +186,13 @@ func handleGetUser(ctx *gin.Context) {
 			return
 		}
 	}
+	res := userResponse{
+		ID:         user.ID,
+		Email:      user.Email,
+		LastSignin: user.LastSignin,
+	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"user": user,
+		"user": res,
 	})
 }

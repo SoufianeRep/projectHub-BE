@@ -55,7 +55,7 @@ func GetUserByEmail(email string) (User, error) {
 	return user, nil
 }
 
-func GetUSerByID(id uint) (User, error) {
+func GetUserByID(id uint) (User, error) {
 	user := User{}
 
 	result := DB.Where("id = ?", id).First(&user)
