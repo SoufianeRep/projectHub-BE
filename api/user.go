@@ -145,7 +145,7 @@ func (server *Server) handleLogin(ctx *gin.Context) {
 	accessToken, err := server.tokenMaker.CreateToken(
 		user.ID,
 		user.Email,
-		time.Hour*2, // TODO: change the validity of the token to a env variable for global use
+		TD*time.Hour, // TODO: change the validity of the token to a env variable for global use
 	)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
@@ -156,7 +156,7 @@ func (server *Server) handleLogin(ctx *gin.Context) {
 		AccessToken: accessToken,
 	}
 
-	// res := loginUserResponse{}
+	user.UpdateLastSignin()
 	ctx.JSON(http.StatusOK, res)
 }
 
@@ -194,5 +194,61 @@ func handleGetUser(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"user": res,
+	})
+}
+
+type getUserTeamsRequest struct {
+	ID uint `uri:"id" binding:"required,min=1"`
+}
+
+type getUserTeamsReponse struct {
+	ID       uint   `json:"id"`
+	TeamName string `json:"team_name"`
+}
+
+func handleGetUserTeams(ctx *gin.Context) {
+	var req getUserTeamsRequest
+
+	err := ctx.ShouldBindUri(&req)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid user ID",
+		})
+		return
+	}
+
+	user, err := db.GetUserByID(req.ID)
+	if err != nil {
+		switch err {
+		case gorm.ErrRecordNotFound:
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "no such user exists"})
+			return
+		default:
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Something went wrong.",
+			})
+			return
+		}
+	}
+
+	teams, err := user.GetTeams()
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{
+			"error": err,
+		})
+		return
+	}
+
+	res := []getUserTeamsReponse{}
+
+	for _, t := range teams {
+		res = append(res, getUserTeamsReponse{
+			ID:       t.ID,
+			TeamName: t.TeamName,
+		})
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"teams": res,
 	})
 }

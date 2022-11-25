@@ -2,12 +2,26 @@ package api
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/SoufianeRep/tscit/token"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
+
+var TD time.Duration
+
+func init() {
+	// Convert token duration value from env variable
+	token, err := strconv.Atoi(os.Getenv("ACCESS_TOKEN_DURATION"))
+	if err != nil {
+		log.Fatal("unable to convert token variable duration", err)
+	}
+	TD = time.Duration(token)
+}
 
 // Server serves HTTP requests for the app
 type Server struct {
@@ -25,7 +39,8 @@ func NewServer(db *gorm.DB) (*Server, error) {
 
 	server := &Server{
 		tokenMaker: tokenMaker,
-		db:         db,
+
+		db: db,
 	}
 
 	server.setupRouter()
@@ -44,11 +59,10 @@ func (server *Server) setupRouter() {
 	authRoutes := router.Group("/").Use(authMidldeware(server.tokenMaker))
 
 	authRoutes.GET("/users/:id", handleGetUser)                  // Get the user information
-	authRoutes.GET("/users/:id/teams")                           // Get all the the teams the user is part of
+	authRoutes.GET("/users/:id/teams", handleGetUserTeams)       // Get all the the teams the user is part of
 	authRoutes.POST("/teams", handleCreateTeam)                  // Create a new team
+	authRoutes.GET("/teams/:id", handleGetTeam)                  // Get team information with all team members and projects optionally
 	authRoutes.POST("/teams/:id/members", handleAddMemberToTeam) // Add a new member to a team manually
-	authRoutes.GET("/teams/:id")                                 // Get team information with all team members and projects optionally
-	authRoutes.GET("teams/:id/members")
 	authRoutes.POST("/projects")
 	authRoutes.GET("/projects")
 	authRoutes.POST("/upload", handleUpload)
