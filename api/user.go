@@ -23,7 +23,7 @@ type userResponse struct {
 	LastSignin time.Time
 }
 
-func newUserResponse(user db.User) userResponse {
+func UserResponse(user db.User) userResponse {
 	return userResponse{
 		ID:         user.ID,
 		Email:      user.Email,
@@ -94,7 +94,7 @@ func (server *Server) handleCreateUser(ctx *gin.Context) {
 		}
 	}
 
-	res := newUserResponse(user)
+	res := UserResponse(user)
 	ctx.JSON(http.StatusOK, gin.H{
 		"user": res,
 		"team": team,
@@ -145,14 +145,14 @@ func (server *Server) handleLogin(ctx *gin.Context) {
 	accessToken, err := server.tokenMaker.CreateToken(
 		user.ID,
 		user.Email,
-		TD*time.Hour, // TODO: change the validity of the token to a env variable for global use
+		TD*time.Hour,
 	)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 	}
 
 	res := loginUserResponse{
-		User:        newUserResponse(user),
+		User:        UserResponse(user),
 		AccessToken: accessToken,
 	}
 

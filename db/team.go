@@ -1,6 +1,10 @@
 package db
 
-import "gorm.io/gorm"
+import (
+	"fmt"
+
+	"gorm.io/gorm"
+)
 
 type Team struct {
 	gorm.Model
@@ -40,9 +44,9 @@ func GetTeam(id uint) (*Team, error) {
 func (team Team) GetProjects() ([]Project, error) {
 	projects := []Project{}
 
-	rows, err := DB.Table("projects").
-		Joins("JOIN teams ON projects.team_id = teams.id").
+	rows, err := DB.Model(Project{}).
 		Where("projects.team_id = ?", team.ID).
+		Joins("JOIN teams ON projects.team_id = teams.id").
 		Rows()
 	if err != nil {
 		return []Project{}, err
@@ -59,10 +63,10 @@ func (team Team) GetProjects() ([]Project, error) {
 func (team Team) GetMembers() ([]User, error) {
 	users := []User{}
 
-	rows, err := DB.Table("users").
+	rows, err := DB.Model(User{}).
+		Where("teams.id = ?", team.ID).
 		Joins("JOIN roles ON roles.user_id = users.id").
 		Joins("JOIN teams On roles.team_id = teams.id").
-		Where("teams.id = ?", team.ID).
 		Rows()
 	if err != nil {
 		return []User{}, err
@@ -72,5 +76,29 @@ func (team Team) GetMembers() ([]User, error) {
 		DB.ScanRows(rows, &users)
 	}
 
+	for _, u := range users {
+		fmt.Println(u.ID)
+		fmt.Println(u.Email)
+	}
 	return users, nil
+}
+
+// AddMember adds a user to the reciever team with the provided role
+func (team Team) AddMember(email string, role string) error {
+	user, err := GetUserByEmail(email)
+	if err != nil {
+		return err
+	}
+
+	arg := CreateRoleParams{
+		UserID: user.ID,
+		TeamID: team.ID,
+		Role:   role,
+	}
+
+	err = CreateRole(arg)
+	if err != nil {
+		return err
+	}
+	return nil
 }

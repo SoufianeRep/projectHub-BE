@@ -39,7 +39,7 @@ func CreateUser(arg CreateUserParams) (User, error) {
 				return User{}, fmt.Errorf("duplicate, email already exist")
 			}
 		}
-		return User{}, fmt.Errorf("an error has occured whie creating the user")
+		return User{}, fmt.Errorf("an error has occured whie creating the user: %v", result.Error)
 	}
 
 	return user, nil
@@ -93,4 +93,16 @@ func (user User) GetTeams() ([]Team, error) {
 	}
 
 	return teams, nil
+}
+
+type IsTeamMemberParams struct {
+	TeamID uint
+}
+
+// IsTeamMember returns true if a role exists for received user with the provided
+// teamID
+func (user User) IsTeamMember(teamID uint) bool {
+	var role Role
+	result := DB.Where("user_id = ? AND team_id = ?", user.ID, teamID).Find(&role)
+	return result.Error != gorm.ErrRecordNotFound
 }

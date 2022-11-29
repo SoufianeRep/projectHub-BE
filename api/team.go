@@ -47,10 +47,10 @@ type getTeamRequest struct {
 }
 
 type getTeamResponse struct {
-	ID       uint         `json:"id"`
-	TeamName string       `json:"team_name"`
-	Projects []db.Project `json:"projects"`
-	Members  []db.User    `json:"team_members"`
+	ID       uint              `json:"id"`
+	TeamName string            `json:"team_name"`
+	Projects []projectResponse `json:"projects"`
+	Members  []userResponse    `json:"team_members"`
 }
 
 func handleGetTeam(ctx *gin.Context) {
@@ -79,7 +79,7 @@ func handleGetTeam(ctx *gin.Context) {
 		}
 	}
 
-	projects, err := team.GetProjects()
+	p, err := team.GetProjects()
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"error": err,
@@ -87,12 +87,22 @@ func handleGetTeam(ctx *gin.Context) {
 		return
 	}
 
-	members, err := team.GetMembers()
+	projects := []projectResponse{}
+	for _, project := range p {
+		projects = append(projects, ProjectResponse(project))
+	}
+
+	tm, err := team.GetMembers()
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
 			"error": err,
 		})
 		return
+	}
+
+	members := []userResponse{}
+	for _, m := range tm {
+		members = append(members, UserResponse(m))
 	}
 
 	res := getTeamResponse{
@@ -115,13 +125,54 @@ type addMemberToTeamRequest struct {
 
 func handleAddMemberToTeam(ctx *gin.Context) {
 	var req addMemberToTeamRequest
+
+	err := ctx.ShouldBindJSON(&req)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": "invalid form data",
+		})
+	}
+
 	teamID, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
 		fmt.Println("cant convert param to int")
 		return
 	}
-
 	req.TeamID = uint(teamID)
 
+	team, err := db.GetTeam(req.TeamID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	user, err := db.GetUserByEmail(req.Email)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{
+			"error": err,
+		})
+		return
+	}
+
+	if ok := user.IsTeamMember(req.TeamID); ok {
+		ctx.JSON(http.StatusConflict, gin.H{
+			"message": "The user is already part of the team",
+		})
+		return
+	}
+
+	err = team.AddMember(req.Email, req.Role)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	ctx.JSON(http.StatusAccepted, gin.H{
+		"message": "Member added successfully",
+	})
 	// TODO: continue witht he logic
 }
