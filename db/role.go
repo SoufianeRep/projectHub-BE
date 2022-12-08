@@ -5,16 +5,16 @@ import "gorm.io/gorm"
 type Role struct {
 	gorm.Model
 	Role   string `gorm:"default:manager"`
-	UserID uint   `gorm:"not null"`
+	UserID uint   `gorm:"index:idx_role,not null"`
 	User   *User
-	TeamID uint `gorm:"not null"`
+	TeamID uint `gorm:"index:idx_role,not null"`
 	Team   *Team
 }
 
 type CreateRoleParams struct {
 	UserID uint
 	TeamID uint
-	Role   string `json:"role"`
+	Role   string `json:"role" binding:"oneof=manager superuser user"`
 }
 
 func CreateRole(arg CreateRoleParams) error {

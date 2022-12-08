@@ -10,7 +10,7 @@ const (
 	alphabet = "abcdefghijklmnopqrstuvwxyz"
 )
 
-var roles = []string{"manager", "superuser", "linguist"}
+var roles = []string{"manager", "superuser", "user"}
 
 func init() {
 	rand.Seed(time.Now().UnixNano())

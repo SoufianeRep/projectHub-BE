@@ -40,6 +40,7 @@ func NewPayload(userID uint, email string, duration time.Duration) (*Payload, er
 	return payload, nil
 }
 
+// Valid check if the token payload is expired returns an err
 func (payload *Payload) Valid() error {
 	if time.Now().After(payload.ExpiredAt) {
 		return ErrExpiredToken

@@ -1,6 +1,8 @@
 package db
 
 import (
+	"fmt"
+
 	"github.com/jackc/pgtype"
 	"gorm.io/gorm"
 )
@@ -30,9 +32,26 @@ func CreateProject(arg CreateProjectParams) (*Project, error) {
 		TeamID:   arg.TeamID,
 	}
 
+	err := project.Transcript.Set([]string{})
+	if err != nil {
+		return nil, err
+	}
+
 	result := DB.Create(&project)
 	if result.Error != nil {
+		fmt.Println(result.Error)
 		return nil, result.Error
+	}
+
+	return project, nil
+}
+
+func GetProject(id uint) (Project, error) {
+	project := Project{}
+
+	result := DB.Where("id = ?", id).First(&project)
+	if result.Error != nil {
+		return Project{}, result.Error
 	}
 
 	return project, nil

@@ -131,6 +131,7 @@ func handleAddMemberToTeam(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{
 			"error": "invalid form data",
 		})
+		return
 	}
 
 	teamID, err := strconv.Atoi(ctx.Param("id"))

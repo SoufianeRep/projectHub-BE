@@ -23,6 +23,7 @@ type CreateUserParams struct {
 	LastSignin time.Time
 }
 
+// CreateUser crates a nez user witht he provided arguments
 func CreateUser(arg CreateUserParams) (User, error) {
 	user := User{
 		Email:      arg.Email,
@@ -57,6 +58,8 @@ func GetUserByEmail(email string) (User, error) {
 	return user, nil
 }
 
+// GetUserByEmail takes an email as a string and retruns the first instance from
+// the database and a error
 func GetUserByID(id uint) (User, error) {
 	user := User{}
 

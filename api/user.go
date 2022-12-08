@@ -31,7 +31,7 @@ func UserResponse(user db.User) userResponse {
 	}
 }
 
-func (server *Server) handleCreateUser(ctx *gin.Context) {
+func handleCreateUser(ctx *gin.Context) {
 	var req createUserRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -148,7 +148,9 @@ func (server *Server) handleLogin(ctx *gin.Context) {
 		TD*time.Hour,
 	)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"error": err,
+		})
 	}
 
 	res := loginUserResponse{
@@ -157,7 +159,9 @@ func (server *Server) handleLogin(ctx *gin.Context) {
 	}
 
 	user.UpdateLastSignin()
-	ctx.JSON(http.StatusOK, res)
+	ctx.JSON(http.StatusOK, gin.H{
+		"data": res,
+	})
 }
 
 type getUserRequest struct {
@@ -193,7 +197,7 @@ func handleGetUser(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"user": res,
+		"data": res,
 	})
 }
 
